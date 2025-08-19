@@ -75,4 +75,4 @@ venv.bak/
 *.sw?
 
 # Data files
-data/*.csv
+#data/*.csv
