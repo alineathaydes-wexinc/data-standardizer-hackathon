@@ -8,16 +8,20 @@ from typing import Dict
 load_dotenv()
 
 def get_final_decision(dossier: Dict) -> Dict:
+    """
+    Makes a final decision using Google's Gemini model with improved rules.
+    """
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
+        print("Warning: GOOGLE_API_KEY not found. Decision agent is offline.")
         return {"action": "FLAG_FOR_REVIEW", "reasoning": "Gemini agent is not configured."}
 
     try:
         genai.configure(api_key=api_key)
         
-        # --- PROMPT MELHORADO ---
+        # --- DEFINITIVE PROMPT ---
         prompt = f"""
-        You are a decisive data quality analyst. Your task is to make a final standardization decision based on a dossier of evidence. Your bias is towards action, trusting the consensus of your specialist agents.
+        You are a decisive data quality analyst. Your task is to make a final data standardization decision based on a dossier of evidence. Your bias is towards action, trusting the consensus of your specialist agents.
 
         **Case Dossier:**
         - User Input: "{dossier.get('user_input')}"
@@ -25,9 +29,9 @@ def get_final_decision(dossier: Dict) -> Dict:
         - Semantic Agent Suggestion: "{dossier.get('best_match_semantic')}" (Score: {dossier.get('score_semantic'):.2f})
 
         **Decision Rules:**
-        1.  **Rule of Consensus:** If the Lexical Agent and the Semantic Agent suggest the EXACT SAME company, you have very strong evidence. In this case, you SHOULD "AUTO_CORRECT", even if their individual scores are not perfect.
-        2.  **Rule of High Confidence:** If either agent has a score above 0.95, you can trust it and "AUTO_CORRECT".
-        3.  **Rule of Doubt:** If the agents suggest DIFFERENT companies or their scores are very low (below 0.75), then "FLAG_FOR_REVIEW".
+        1.  **Rule of Consensus:** If the Lexical Agent and the Semantic Agent suggest the EXACT SAME company, you have very strong evidence. In this case, you MUST "AUTO_CORRECT". This is the most important rule.
+        2.  **Rule of High Confidence:** If either agent has a score above 0.96, you can trust it and "AUTO_CORRECT".
+        3.  **Rule of Doubt:** If the agents suggest DIFFERENT companies and their scores are not high, then "FLAG_FOR_REVIEW".
 
         **Your Task:**
         Apply the rules to the dossier and provide your final verdict.
